@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PocketCash Premium Secure</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: radial-gradient(circle at top left, #2c3e50, #000000); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        
+        .app-container { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; max-width: 400px; border-radius: 25px; padding: 30px; text-align: center; color: white; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .brand-name { font-size: 28px; font-weight: 700; background: linear-gradient(to right, #00b894, #00cec9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .balance-card { background: rgba(0,0,0,0.2); border-radius: 20px; padding: 20px; margin: 25px 0; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-bottom: 12px; }
+        .btn-earn { background: linear-gradient(45deg, #6c5ce7, #a29bfe); color: white; }
+        .btn-video { background: linear-gradient(45deg, #ff7675, #fd79a8); color: white; }
+        .btn-scratch { background: linear-gradient(45deg, #e1b12c, #fbc531); color: #2c3e50; }
+        
+        .btn:disabled { background: rgba(255,255,255,0.1) !important; color: rgba(255,255,255,0.4) !important; cursor: not-allowed; }
+        .btn-withdraw { background: #00b894; color: white; margin-top: 10px; }
+        .btn-withdraw:hover { background: #009432; }
+        .btn-logout { background: transparent; color: #ff7675; border: none; font-size: 13px; margin-top: 15px; cursor: pointer; text-decoration: underline; }
+        
+        input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: white; outline: none; }
+        input::placeholder { color: rgba(255,255,255,0.5); }
+        #timer-msg { font-size: 14px; margin-top: 10px; margin-bottom: 15px; color: #fab1a0; font-weight: bold; min-height: 21px; }
+        
+        /* Screens Toggle */
+        .screen { display: none; }
+        .active-screen { display: block; }
+        .auth-toggle { font-size: 13px; color: #00cec9; margin-top: 15px; cursor: pointer; }
+        .otp-alert { background: #ffeaa7; color: #2d3436; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div id="auth-screen" class="screen active-screen">
+            <div class="brand-name" style="margin-bottom: 5px;">PocketCash</div>
+            <p id="auth-title" style="font-size: 14px; opacity: 0.8; margin-bottom: 20px;">Login to Your Account</p>
+            
+            <input type="text" id="auth-username" placeholder="Enter Username / PhonePe No">
+            <input type="password" id="auth-password" placeholder="Enter Password">
+            
+            <button class="btn btn-earn" style="margin-top: 20px;" id="auth-btn" onclick="handleAuth()">LOGIN</button>
+            
+            <p class="auth-toggle" id="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Register</p>
+            <p class="auth-toggle" style="color: #ff7675; margin-top: 5px;" id="forget-toggle" onclick="showForgetScreen()">Forgot Password?</p>
+        </div>
+
+        <div id="otp-screen" class="screen">
+            <div class="brand-name" style="margin-bottom: 5px;">Security Verification</div>
+            <p style="font-size: 13px; opacity: 0.8; margin-bottom: 15px;">We have generated a secure verification code.</p>
+            
+            <div class="otp-alert" id="generated-otp-box">Your OTP is: <span id="current-otp" style="font-size: 18px; color: #d63031;">0000</span></div>
+            
+            <input type="text" id="entered-otp" placeholder="Enter 4-Digit OTP" maxlength="4">
+            <button class="btn btn-earn" style="margin-top: 20px;" onclick="verifyOTP()">VERIFY & PROCEED</button>
+            <p class="auth-toggle" style="color: #ff7675;" onclick="cancelOTP()">Cancel</p>
+        </div>
+
+        <div id="forget-screen" class="screen">
+            <div class="brand-name" style="margin-bottom: 5px;">Reset Password</div>
+            <p style="font-size: 13px; opacity: 0.8; margin-bottom: 15px;">Verify your username to change password.</p>
+            
+            <input type="text" id="forget-username" placeholder="Enter Your Registered Username / PhonePe No">
+            <input type="password" id="forget-new-password" placeholder="Enter New Password">
+            
+            <button class="btn btn-earn" style="margin-top: 20px;" onclick="handleForgetPassword()">SEND OTP & RESET</button>
+            <p class="auth-toggle" onclick="backToLogin()">Back to Login</p>
+        </div>
+
+        <div id="dashboard-screen" class="screen">
+            <div class="brand-name">PocketCash</div>
+            <p style="font-size: 12px; opacity: 0.7;">Welcome, <span id="user-display" style="color: #00cec9; font-weight: 600;">User</span></p>
+            
+            <div class="balance-card">
+                <div style="font-size: 12px; opacity: 0.6;">CURRENT BALANCE</div>
+                <div style="font-size: 40px; font-weight: 700;">₹<span id="balance">0.00</span></div>
+            </div>
+
+            <div id="timer-msg">Loading...</div>
+
+            <button class="btn btn-earn" id="ads-btn" onclick="startTask('ads')">📺 ADS TO EARN (₹1.00)</button>
+            <button class="btn btn-video" id="video-btn" onclick="startTask('video')">🎬 WATCH VIDEO EARN (₹1.00)</button>
+            <button class="btn btn-scratch" id="scratch-btn" onclick="startTask('scratch')">⏳ SCRATCH & EARN (₹1.00)</button>
+
+            <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <h4 style="color: #00cec9; text-align: left; font-size: 14px; margin-bottom: 5px;">PhonePe / Wallet Withdrawal</h4>
+                <input type="text" id="upi-id" placeholder="Enter PhonePe / UPI ID">
+                <input type="number" id="withdraw-amount" placeholder="Min Withdrawal: ₹400">
+                <button class="btn btn-withdraw" onclick="processWithdrawal()">REQUEST WITHDRAWAL</button>
+            </div>
+            
+            <button class="btn-logout" onclick="logout()">Logout Account</button>
+        </div>
+    </div>
+
+    <script>
+        let isLoginMode = true; 
+        let currentUser = localStorage.getItem('currentUser') || null;
+        let timerInterval = null;
+        
+        let systemGeneratedOTP = null;
+        let pendingUser = "";
+        let pendingPass = "";
+        let otpPurpose = ""; 
+
+        // Browser/Device Fingerprint Generator
+        function getDeviceID() {
+            let id = localStorage.getItem('uniqueDeviceID');
+            if (!id) {
+                id = 'DEV-' + Math.random().toString(36).substr(2, 9) + '-' + new Date().getTime();
+                localStorage.setItem('uniqueDeviceID', id);
+            }
+            return id;
+        }
+
+        if (currentUser) { showDashboard(); }
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+            document.getElementById(screenId).classList.add('active-screen');
+        }
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? "Login to Your Account" : "Create an Account";
+            document.getElementById('auth-btn').innerText = isLoginMode ? "LOGIN" : "REGISTER";
+            document.getElementById('auth-toggle').innerText = isLoginMode ? "Don't have an account? Register" : "Already have an account? Login";
+            document.getElementById('forget-toggle').style.display = isLoginMode ? "block" : "none";
+        }
+
+        function handleAuth() {
+            const user = document.getElementById('auth-username').value.trim();
+            const pass = document.getElementById('auth-password').value.trim();
+            const currentDevice = getDeviceID();
+
+            if (!user || !pass) { alert("Please fill all fields!"); return; }
+            let usersData = JSON.parse(localStorage.getItem('pocketCashUsers')) || {};
+
+            if (isLoginMode) {
+                // Login + STRICT Device Check
+                if (usersData[user] && usersData[user].password === pass) {
+                    if (usersData[user].deviceID && usersData[user].deviceID !== currentDevice) {
+                        alert("❌ Security Block: This ID is registered on another device. You cannot log in from here!");
+                        return;
+                    }
+                    localStorage.setItem('currentUser', user);
+                    currentUser = user;
+                    showDashboard();
+                } else { alert("Wrong Username or Password!"); }
+            } else {
+                if (usersData[user]) { alert("Username already exists!"); return; }
+                pendingUser = user;
+                pendingPass = pass;
+                otpPurpose = "register";
+                generateAndShowOTP();
+            }
+        }
+
+        function generateAndShowOTP() {
+            systemGeneratedOTP = Math.floor(1000 + Math.random() * 9000).toString();
+            document.getElementById('current-otp').innerText = systemGeneratedOTP;
+            document.getElementById('entered-otp').value = "";
+            switchScreen('otp-screen');
+        }
+
+        function verifyOTP() {
+            const userOTP = document.getElementById('entered-otp').value.trim();
+            if (userOTP !== systemGeneratedOTP) { alert("Invalid OTP! Try again."); return; }
+
+            let usersData = JSON.parse(localStorage.getItem('pocketCashUsers')) || {};
+
+            if (otpPurpose === "register") {
+                // Registering and binding the device identity permanently
+                usersData[pendingUser] = { 
+                    password: pendingPass, 
+                    balance: 0.00, 
+                    clickCount: 0, 
+                    lockUntil: 0,
+                    deviceID: getDeviceID() 
+                };
+                localStorage.setItem('pocketCashUsers', JSON.stringify(usersData));
+                localStorage.setItem('currentUser', pendingUser);
+                currentUser = pendingUser;
+                alert("Account Registered & Locked to this Device Successfully!");
+                showDashboard();
+            } else if (otpPurpose === "forget") {
+                usersData[pendingUser].password = pendingPass;
+                localStorage.setItem('pocketCashUsers', JSON.stringify(usersData));
+                alert("Password updated successfully! Please login now.");
+                backToLogin();
+            }
+        }
+
+        function showForgetScreen() {
+            document.getElementById('forget-username').value = "";
+            document.getElementById('forget-new-password').value = "";
+            switchScreen('forget-screen');
+        }
+
+        function handleForgetPassword() {
+            const user = document.getElementById('forget-username').value.trim();
+            const newPass = document.getElementById('forget-new-password').value.trim();
+            const currentDevice = getDeviceID();
+
+            if (!user || !newPass) { alert("Please fill all fields!"); return; }
+            let usersData = JSON.parse(localStorage.getItem('pocketCashUsers')) || {};
+
+            if (!usersData[user]) { alert("Username not registered!"); return; }
+            
+            // Forget Password Device protection
+            if (usersData[user].deviceID && usersData[user].deviceID !== currentDevice) {
+                alert("❌ Security Alert: You cannot reset password from an unknown device!");
+                return;
+            }
+
+            pendingUser = user;
+            pendingPass = newPass;
+            otpPurpose = "forget";
+            generateAndShowOTP();
+        }
+
+        function cancelOTP() { backToLogin(); }
+        function backToLogin() {
+            isLoginMode = false; toggleAuthMode(); 
+            switchScreen('auth-screen');
+        }
+
+        function showDashboard() {
+            switchScreen('dashboard-screen');
+            document.getElementById('user-display').innerText = currentUser;
+            document.getElementById('auth-username').value = "";
+            document.getElementById('auth-password').value = "";
+            updateUI();
+        }
+
+        function updateUI() {
+            let usersData = JSON.parse(localStorage.getItem('pocketCashUsers'));
+            let userData = usersData[currentUser];
+            document.getElementById('balance').innerText = parseFloat(userData.balance).toFixed(2);
+            checkLockStatus();
+        }
+
+        function disableAllEarnButtons(status) {
+            document.getElementById('ads-btn').disabled = status;
+            document.getElementById('video-btn').disabled = status;
+            document.getElementById('scratch-btn').disabled = status;
+        }
+
+        function startTask(type) {
+            let usersData = JSON.parse(localStorage.getItem('pocketCashUsers'));
+            let userData = usersData[currentUser];
+            if (new Date().getTime() < userData.lockUntil) { alert("Please wait for timer!"); return; }
+
+            window.open("https://omg10.com/4/11256413", '_blank');
+            
+            disableAllEarnButtons(true);
+            document.getElementById('timer-msg').innerText = "Processing task... Keep ad window open (6s)";
+
+            setTimeout(() => {
+                usersData = JSON.parse(localStorage.getItem('pocketCashUsers'));
+                userData = usersData[currentUser];
+                userData.balance = parseFloat(userData.balance) + 1.00;
+                userData.clickCount = parseInt(userData.clickCount) + 1;
+
+                if (userData.clickCount >= 5) {
+                    userData.lockUntil = new Date().getTime() + (30 * 60 * 1000);
+                    userData.clickCount = 0;
+                }
+                usersData[currentUser] = userData;
+                localStorage.setItem('pocketCashUsers', JSON.stringify(usersData));
+                updateUI();
+            }, 6000);
+        }
+
+        function checkLockStatus() {
+            if (timerInterval) clearInterval(timerInterval);
+            let usersData = JSON.parse(localStorage.getItem('pocketCashUsers'));
+            let userData = usersData[currentUser];
+            let now = new Date().getTime();
+
+            if (now < userData.lockUntil) {
+                disableAllEarnButtons(true);
+                timerInterval = setInterval(() => {
+                    let currentNow = new Date().getTime();
+                    let timeLeft = userData.lockUntil - currentNow;
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        userData.lockUntil = 0;
+                        usersData[currentUser] = userData;
+                        localStorage.setItem('pocketCashUsers', JSON.stringify(usersData));
+                        disableAllEarnButtons(false);
+                        document.getElementById('timer-msg').innerText = `Total tasks left in this slot: ${5 - userData.clickCount}`;
+                    } else {
+                        let minutes = Math.floor(timeLeft / 60000);
+                        let seconds = Math.floor((timeLeft % 60000) / 1000);
+                        document.getElementById('timer-msg').innerText = `🚫 Limit reached! Try in ${minutes}m ${seconds}s`;
+                    }
+                }, 1000);
+            } else {
+                disableAllEarnButtons(false);
+                document.getElementById('timer-msg').innerText = `Total tasks left in this slot: ${5 - userData.clickCount}`;
+            }
+        }
+
+        function processWithdrawal() {
+            let usersData = JSON.parse(localStorage.getItem('pocketCashUsers'));
+            let userData = usersData[currentUser];
+            let upi = document.getElementById('upi-id').value.trim();
+            let amount = parseFloat(document.getElementById('withdraw-amount').value);
+
+            if (!upi) { alert("Please enter your PhonePe / UPI ID!"); return; }
+
+            if (amount >= 400 && amount <= userData.balance) {
+                userData.balance = parseFloat(userData.balance) - amount;
+                usersData[currentUser] = userData;
+                localStorage.setItem('pocketCashUsers', JSON.stringify(usersData));
+                document.getElementById('withdraw-amount').value = "";
+                document.getElementById('upi-id').value = "";
+                updateUI();
+                alert(`Withdrawal Request of ₹${amount.toFixed(2)} sent successfully to ${upi}!`);
+            } else { alert("Invalid amount or insufficient balance (Min ₹400)!"); }
+        }
+
+        function logout() {
+            if (timerInterval) clearInterval(timerInterval);
+            localStorage.removeItem('currentUser');
+            currentUser = null;
+            backToLogin();
+        }
+    </script>
+</body>
+</html>
